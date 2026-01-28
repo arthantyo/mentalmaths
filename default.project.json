@@ -1,0 +1,24 @@
+{
+  "name": "mental-maths-for-iq",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "Remotes": {
+        "$path": "src/shared/remotes"
+      }
+    },
+    "ServerScriptService": {
+      "$path": "src/server"
+    },
+
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "UI": {
+          "$className": "Folder",
+          "$path": "src/client/ui"
+        }
+      }
+    }
+  }
+}
