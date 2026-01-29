@@ -18,10 +18,15 @@ local spawnLocation = workspace:WaitForChild("SpawnLocation") -- Replace "Spawn"
 -- RemoteEvents
 local RemoveMathGuiEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("RemoveMathGuiEvent")
 local ThemeChangedEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ThemeChangedEvent")
+local MathQuestionEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("MathQuestionEvent")
+local AnswerEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("AnswerEvent")
+local PlatformHandler = require(ServerScriptService.PlatformHandler)
 
 local RunService = game:GetService("RunService")
 local lava = arena:WaitForChild("Lava") -- your lava part
 local originalLavaPos = lava.Position
+
+local currentThemeId = "SUBTRACTION_AND_ADDITION" -- default fallback
 
 
 -- TODO:
@@ -72,6 +77,74 @@ RoundTimer.Parent = ReplicatedStorage
 
 -- Track active players
 local activePlayers = {}
+
+-- Store answers for each player
+local playerAnswers = {}
+
+
+local function generateQuestion(themeId)
+	if themeId == "SUBTRACTION_AND_ADDITION" then
+		local a, b = math.random(1, 20), math.random(1, 20)
+		local op = math.random(1, 2) == 1 and "+" or "-"
+		local question = a .. " " .. op .. " " .. b .. " = ?"
+		local answer = op == "+" and (a + b) or (a - b)
+		return question, answer
+	elseif themeId == "MULTIPLICATION_AND_DIVISION" then
+		local a, b = math.random(2, 12), math.random(2, 12)
+		local op = math.random(1, 2) == 1 and "*" or "/"
+		local question, answer
+		if op == "*" then
+			question = a .. " * " .. b .. " = ?"
+			answer = a * b
+		else
+			question = (a * b) .. " / " .. a .. " = ?"
+			answer = b
+		end
+		return question, answer
+	elseif themeId == "MIXED" then
+		local ops = {"+", "-", "*", "/"}
+		local op = ops[math.random(1, #ops)]
+		local a, b = math.random(1, 20), math.random(1, 20)
+		local question, answer
+		if op == "+" then
+			question = a .. " + " .. b .. " = ?"
+			answer = a + b
+		elseif op == "-" then
+			question = a .. " - " .. b .. " = ?"
+			answer = a - b
+		elseif op == "*" then
+			question = a .. " * " .. b .. " = ?"
+			answer = a * b
+		elseif op == "/" then
+			-- Ensure division is always integer or to 2 decimal places
+			local dividend = a * b  -- ensures dividend is divisible by b
+			question = dividend .. " / " .. a .. " = ?"
+			answer = b
+		end
+		return question, answer
+	elseif themeId == "FRACTION" then
+		-- Generate a single fraction and ask for its simplest form
+		local num = math.random(2, 20)
+		local denom = math.random(2, 20)
+		local question = string.format("Simplify: %d/%d", num, denom)
+
+		-- Simplify the fraction
+		local function gcd(a, b)
+			while b ~= 0 do
+				a, b = b, a % b
+			end
+			return a
+		end
+		local divisor = gcd(math.abs(num), math.abs(denom))
+		local simpNum = num // divisor
+		local simpDen = denom // divisor
+
+		local answer = simpNum .. "/" .. simpDen
+		return question, answer
+
+	end
+end
+
 
 -- Assign platforms
 local function assignPlatforms()
@@ -216,11 +289,26 @@ task.spawn(function()
 
 
 		if themeData then
-            ThemeChangedEvent:FireAllClients(themeData.DisplayName, themeData.Description)
-        end
+			currentThemeId = themeData.Id
+			ThemeChangedEvent:FireAllClients(themeData.DisplayName, themeData.Description)
+		end
+
+		-- Store answers for each player
+
+
+
 
 		-- START ROUND
 		assignPlatforms()
+
+		for _, player in ipairs(Players:GetPlayers()) do
+			if player:GetAttribute("InRound") then
+				local question, answer = generateQuestion(themeData.Id)
+				playerAnswers[player.UserId] = answer
+				MathQuestionEvent:FireClient(player, question)
+			end
+		end
+
 		RoundState.Value = "InRound"
 		for i = GameConstants.ROUND_TIME, 0, -1 do
 			RoundTimer.Value = i
@@ -309,3 +397,33 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 
+
+
+
+AnswerEvent.OnServerEvent:Connect(function(player: Player, userAnswer)
+    local correctAnswer = playerAnswers[player.UserId]
+    if correctAnswer == nil then return end
+
+    -- Validate input
+    local isCorrect = false
+    if type(correctAnswer) == "number" then
+        local num = tonumber(userAnswer)
+        if num then
+            isCorrect = math.abs(num - correctAnswer) < 0.01
+        end
+    else
+        -- For fractions, check format "a/b"
+        if type(userAnswer) == "string" and userAnswer:match("^%s*%d+%s*/%s*%d+%s*$") then
+            isCorrect = userAnswer:gsub("%s+", "") == tostring(correctAnswer):gsub("%s+", "")
+        end
+    end
+
+    print(player.Name, "answered:", userAnswer, "Correct:", isCorrect)
+    PlatformHandler.UpdatePlatform(player, isCorrect)
+
+    if player:GetAttribute("InRound") then
+		local question, answer = generateQuestion(currentThemeId)
+		playerAnswers[player.UserId] = answer
+		MathQuestionEvent:FireClient(player, question)
+	end
+end)

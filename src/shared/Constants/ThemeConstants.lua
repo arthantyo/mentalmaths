@@ -19,7 +19,7 @@ ThemeConstants.Themes = {
     FRACTION = {
         Id = "FRACTION",
         DisplayName = "Fraction Frenzy",
-        Description = "Work with fractions in various operations!"
+        Description = "Simplify fractions!"
     }
 }
 

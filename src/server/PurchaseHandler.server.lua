@@ -5,7 +5,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local ThemeRequestQueue = require(ServerScriptService.Constants.ThemeRequestQueue)
 
 -- RemoteEvents in ReplicatedStorage
-local MathReactorPurchaseEvent =ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("MathReactorPurchaseEvent")
+local MathReactorPurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("MathReactorPurchaseEvent")
 --local VendingMachinePurchaseEvent = ReplicatedStorage:WaitForChild("VendingMachinePurchaseEvent")
 
 -- map choices to Developer Product IDs
