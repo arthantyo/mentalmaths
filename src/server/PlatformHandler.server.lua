@@ -1,13 +1,11 @@
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 local AnswerEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("AnswerEvent")
 local platformsFolder = workspace:WaitForChild("Arena"):WaitForChild("MathPlatforms")
 
-local GROWTH = 4
-local TWEEN_TIME = 0.5
-local DAMAGE = 20
-
+local GameConstants = require(ServerScriptService.Constants.GameConstants)
 -- Cache original platform sizes
 local original = {}
 for _, part in ipairs(platformsFolder:GetChildren()) do
@@ -28,12 +26,12 @@ AnswerEvent.OnServerEvent:Connect(function(player, isCorrect)
 
 	local newSize
 	if isCorrect then
-		newSize = oldSize + Vector3.new(GROWTH, GROWTH, 0)
+		newSize = oldSize + Vector3.new(GameConstants.PLATFORM_GROWTH, GameConstants.PLATFORM_GROWTH, 0)
 	else
 		local min = original[part.Name].Size
 		newSize = Vector3.new(
-			math.max(oldSize.X - GROWTH, min.X),
-			math.max(oldSize.Y - GROWTH, min.Y),
+			math.max(oldSize.X - GameConstants.PLATFORM_GROWTH, min.X),
+			math.max(oldSize.Y - GameConstants.PLATFORM_GROWTH, min.Y),
 			oldSize.Z
 		)
 
@@ -42,7 +40,7 @@ AnswerEvent.OnServerEvent:Connect(function(player, isCorrect)
 		if character then
 			local humanoid = character:FindFirstChild("Humanoid")
 			if humanoid and humanoid.Health > 0 then
-				humanoid:TakeDamage(DAMAGE)
+				humanoid:TakeDamage(GameConstants.PLATFORM_DAMAGE)
 			end
 		end
 	end
@@ -57,7 +55,7 @@ AnswerEvent.OnServerEvent:Connect(function(player, isCorrect)
 
 	TweenService:Create(
 		part,
-		TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+		TweenInfo.new(GameConstants.PLATFORM_TWEEN_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
 		{ Size = newSize, Position = newPos }
 	):Play()
 end)

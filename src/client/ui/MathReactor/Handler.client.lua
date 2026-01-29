@@ -1,6 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
+local ThemeConstants = require(ReplicatedStorage:WaitForChild("Constants"):WaitForChild("ThemeConstants"))
 
 -- Event
 local MathReactorPurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("MathReactorPurchaseEvent")
@@ -29,28 +30,26 @@ local choices = {
 }
 
 -- data for each choice
-local choiceData = {
-	[frame.Choice1] = {
-		title = "Choice 1",
-		desc = "This is the description for choice 1.",
-		price = 50, -- Robux
-	},
-	[frame.Choice2] = {
-		title = "Choice 2",
-		desc = "This is the description for choice 2.",
-		price = 100,
-	},
-	[frame.Choice3] = {
-		title = "Choice 3",
-		desc = "This choice does something special.",
-		price = 200,
-	},
-	[frame.Choice4] = {
-		title = "Choice 4",
-		desc = "High risk, high reward.",
-		price = 500,
-	},
+local themeList = {
+    ThemeConstants.Themes.SUBTRACTION_AND_ADDITION,
+    ThemeConstants.Themes.MULTIPLICATION_AND_DIVISION,
+    ThemeConstants.Themes.MIXED,
+    ThemeConstants.Themes.FRACTION,
 }
+
+local choiceData = {}
+for i, button in ipairs(choices) do
+    local theme = themeList[i]
+    if theme then
+        choiceData[button] = {
+            title = theme.DisplayName,
+            desc = theme.Description,
+            price = 50 * i, -- Example: price increases per theme, adjust as needed
+            id = theme.Id,
+        }
+    end
+end
+
 
 -- helper to show/hide folder children
 local function setDetailVisible(visible)
@@ -75,6 +74,7 @@ local function highlightChoice(selected)
 end
 
 -- default state
+gui.ResetOnSpawn = false
 gui.Enabled = false
 frame.Visible = false
 setDetailVisible(false)
@@ -148,5 +148,6 @@ purchaseButton.MouseButton1Click:Connect(function()
 	local choiceName = selectedChoice.Name
 
 	-- Fire MathReactor purchase event only
-	MathReactorPurchaseEvent:FireServer(choiceName)
+	-- In Handler.client.lua, change:
+	MathReactorPurchaseEvent:FireServer(choiceData[selectedChoice].id)
 end)

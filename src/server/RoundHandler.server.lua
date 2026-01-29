@@ -1,17 +1,27 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local ServerScriptService = game:GetService("ServerScriptService")
+
+-- Theme Queue Module
+local ThemeRequestQueue = require(ServerScriptService.Constants.ThemeRequestQueue)
+
+-- Game Constants Module 
+local GameConstants = require(ServerScriptService.Constants.GameConstants)
+local ThemeConstants = require(ReplicatedStorage.Constants.ThemeConstants)
 
 local arena = workspace:WaitForChild("Arena")
 local mathPlatformsFolder = arena:WaitForChild("MathPlatforms")
 
 local spawnLocation = workspace:WaitForChild("SpawnLocation") -- Replace "Spawn" with your actual spawn part name
+
+-- RemoteEvents
 local RemoveMathGuiEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("RemoveMathGuiEvent")
+local ThemeChangedEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ThemeChangedEvent")
 
 local RunService = game:GetService("RunService")
 local lava = arena:WaitForChild("Lava") -- your lava part
 local originalLavaPos = lava.Position
-local LAVA_SPEED = 0.5 -- studs per second
 
 
 -- TODO:
@@ -60,13 +70,8 @@ RoundTimer.Name = "RoundTimer"
 RoundTimer.Value = 0
 RoundTimer.Parent = ReplicatedStorage
 
--- Config
-local INTERMISSION_TIME = 10
-local ROUND_TIME = 15
-
 -- Track active players
 local activePlayers = {}
-
 
 -- Assign platforms
 local function assignPlatforms()
@@ -115,15 +120,13 @@ local function assignPlatforms()
 	end
 end
 
-local DEFAULT_WALKSPEED = 40                          
-local DEFAULT_JUMPPOWER = 50
 
 local function restoreMovement(player)
 	if player.Character then
 		local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
 		if humanoid then
-			humanoid.WalkSpeed = DEFAULT_WALKSPEED
-			humanoid.JumpPower = DEFAULT_JUMPPOWER
+			humanoid.WalkSpeed = GameConstants.PLAYER_DEFAULT_WALKSPEED
+			humanoid.JumpPower = GameConstants.PLAYER_DEFAULT_JUMPPOWER
 		end
 	end
 end
@@ -182,21 +185,44 @@ local function resetAvailablePlatforms()
 end
 
 
--- Round Loop
+-- MAIN LOOP
 task.spawn(function()
 	while true do
 		-- INTERMISSION
 		lava.Position = originalLavaPos
 		RoundState.Value = "Intermission"
-		for i = INTERMISSION_TIME, 0, -1 do
+		for i = GameConstants.INTERMISSION_TIME, 0, -1 do
 			RoundTimer.Value = i
 			task.wait(1)
 		end
 
+		-- PROCESS THEME REQUEST QUEUE
+		local nextTheme = ThemeRequestQueue:GetNextTheme()
+		local themeData
+
+		if nextTheme then
+			-- Handle the next theme (e.g., apply it to the round)
+			print("Next theme chosen by ", nextTheme.Player.Name, "is", nextTheme.Theme)
+
+			
+			themeData = ThemeConstants.Themes[nextTheme.Theme]
+		else
+            -- Pick a random theme if queue is empty
+            local allThemes = ThemeConstants.AllThemes
+            local randomTheme = allThemes[math.random(1, #allThemes)]
+            themeData = randomTheme
+            print("No theme in queue, picked random theme:", themeData.DisplayName)
+        end
+
+
+		if themeData then
+            ThemeChangedEvent:FireAllClients(themeData.DisplayName, themeData.Description)
+        end
+
 		-- START ROUND
 		assignPlatforms()
 		RoundState.Value = "InRound"
-		for i = ROUND_TIME, 0, -1 do
+		for i = GameConstants.ROUND_TIME, 0, -1 do
 			RoundTimer.Value = i
 			task.wait(1)
 		end
@@ -211,8 +237,6 @@ task.spawn(function()
 end)
 
 
-local LAVA_DAMAGE = 5
-local LAVA_CHECK_RATE = 0.1 -- seconds between damage checks
 
 -- Coroutine to damage players who touch lava
 task.spawn(function()
@@ -241,7 +265,7 @@ task.spawn(function()
 						if playerMax.X >= lavaMin.X and playerMin.X <= lavaMax.X
 							and playerMax.Y >= lavaMin.Y and playerMin.Y <= lavaMax.Y
 							and playerMax.Z >= lavaMin.Z and playerMin.Z <= lavaMax.Z then
-							humanoid:TakeDamage(LAVA_DAMAGE)
+							humanoid:TakeDamage(GameConstants.LAVA_DAMAGE)
 						end
 					end
 				end
@@ -250,7 +274,7 @@ task.spawn(function()
 
 
 		end
-		task.wait(LAVA_CHECK_RATE)
+		task.wait(GameConstants.LAVA_CHECK_RATE)
 	end
 end)
 
@@ -259,7 +283,7 @@ end)
 RunService.Heartbeat:Connect(function(dt)
 	if RoundState.Value == "InRound" then
 		-- Move the lava up smoothly
-		lava.Position = lava.Position + Vector3.new(0, LAVA_SPEED * dt, 0)
+		lava.Position = lava.Position + Vector3.new(0, GameConstants.LAVA_SPEED * dt, 0)
 	end
 end)
 
@@ -283,3 +307,5 @@ Players.PlayerAdded:Connect(function(player)
 
 	end)
 end)
+
+

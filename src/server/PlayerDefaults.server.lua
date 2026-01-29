@@ -1,20 +1,20 @@
 local Players = game:GetService("Players")
 
 -- default settings
-local DEFAULT_MIN_ZOOM = 10
-local DEFAULT_MAX_ZOOM = 25
-local DEFAULT_WALKSPEED = 40 
+local ServerScriptService = game:GetService("ServerScriptService")
+local GameConstants = require(ServerScriptService.Constants.GameConstants)
 
 -- function to apply settings for a player's character
 local function applySettings(player)
 	-- camera zoom
-	player.CameraMinZoomDistance = DEFAULT_MIN_ZOOM
-	player.CameraMaxZoomDistance = DEFAULT_MAX_ZOOM
+	player.CameraMinZoomDistance = GameConstants.PLAYER_DEFAULT_MIN_ZOOM
+	player.CameraMaxZoomDistance = GameConstants.PLAYER_DEFAULT_MAX_ZOOM
 
 	-- walkspeed
 	if player.Character and player.Character:FindFirstChild("Humanoid") then
 		local humanoid = player.Character:FindFirstChild("Humanoid")
-		humanoid.WalkSpeed = DEFAULT_WALKSPEED
+		humanoid.WalkSpeed = GameConstants.PLAYER_DEFAULT_WALKSPEED
+		humanoid.JumpPower = GameConstants.PLAYER_DEFAULT_JUMPPOWER
 	end
 end
 
@@ -27,7 +27,7 @@ Players.PlayerAdded:Connect(function(player)
 	player.CharacterAdded:Connect(function(char)
 		-- wait a tiny bit for Humanoid to exist
 		local humanoid = char:WaitForChild("Humanoid")
-		humanoid.WalkSpeed = DEFAULT_WALKSPEED
+		humanoid.WalkSpeed = GameConstants.PLAYER_DEFAULT_WALKSPEED
 	end)
 end)
 

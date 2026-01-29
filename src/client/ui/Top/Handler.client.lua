@@ -5,6 +5,8 @@ local Players = game:GetService("Players")
 local RoundTimer = ReplicatedStorage:WaitForChild("RoundTimer")
 local RoundState = ReplicatedStorage:WaitForChild("RoundState")
 
+local ThemeChangedEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ThemeChangedEvent")
+
 -- UI
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -13,6 +15,8 @@ local gui = playerGui:WaitForChild("TopGui")
 local countdownLabel = gui:WaitForChild("Countdown")
 local statusLabel = gui:WaitForChild("LoopStatus")
 local descriptionLabel = gui:WaitForChild("Description") -- NEW
+
+gui.ResetOnSpawn = false
 
 -- Helper to format timer nicely (optional)
 local function formatTime(seconds)
@@ -27,6 +31,15 @@ local function updateTimer()
 	end
 end
 
+
+local currentThemeName = ""
+
+ThemeChangedEvent.OnClientEvent:Connect(function(displayName)
+    currentThemeName = displayName
+    descriptionLabel.Text = "Theme: " .. displayName
+end)
+
+
 -- Update status text
 local function updateStatus()
 	local state = RoundState.Value
@@ -39,8 +52,7 @@ local function updateStatus()
 	elseif state == "InRound" then
 		statusLabel.Text = "Game In Progress"
 		countdownLabel.Visible = true
-		descriptionLabel.Text = "Theme: Default" -- placeholder, can update dynamically
-
+	 	descriptionLabel.Text = "Theme: " .. currentThemeName
 	elseif state == "RoundEnd" then
 		statusLabel.Text = "Round Ending"
 		countdownLabel.Visible = false

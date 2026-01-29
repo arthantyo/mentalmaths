@@ -6,6 +6,9 @@
     "ReplicatedStorage": {
       "Remotes": {
         "$path": "src/shared/remotes"
+      },
+      "Constants": {
+        "$path": "src/shared/constants"
       }
     },
     "ServerScriptService": {
