@@ -2,8 +2,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ModalEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ModalEvent")
-local mathReactor = workspace:WaitForChild("MathReactor")
-local part = mathReactor:WaitForChild("MathReactorScanner")
+local vendingMachine = workspace:WaitForChild("VendingMachine")
+local part = vendingMachine:WaitForChild("VendingMachineScanner")
 
 
 -- [player] = number of touching body parts
@@ -23,7 +23,7 @@ part.Touched:Connect(function(hit)
 
 	-- first touch → open
 	if touchCount[player] == 1 then
-		ModalEvent:FireClient(player, "open", "mathreactor")
+		ModalEvent:FireClient(player, "open", "vendingmachine")
 	end
 end)
 
@@ -37,7 +37,7 @@ part.TouchEnded:Connect(function(hit)
 	-- all parts left → close
 	if touchCount[player] <= 0 then
 		touchCount[player] = nil
-		ModalEvent:FireClient(player, "close", "mathreactor")
+		ModalEvent:FireClient(player, "close", "vendingmachine")
 	end
 end)
 

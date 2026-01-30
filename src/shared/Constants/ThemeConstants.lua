@@ -4,17 +4,17 @@ ThemeConstants.Themes = {
     SUBTRACTION_AND_ADDITION = {
         Id = "SUBTRACTION_AND_ADDITION",
         DisplayName = "Add x Subtract",
-        Description = "Solve problems involving both addition and subtraction!"
+        Description = "Solve addition and subtraction!"
     },
     MULTIPLICATION_AND_DIVISION = {
         Id = "MULTIPLICATION_AND_DIVISION",
         DisplayName = "Multiply x Divide",
-        Description = "Tackle multiplication and division challenges!"
+        Description = "Tackle multiplication and division!"
     },
     MIXED = {
         Id = "MIXED",
         DisplayName = "Mixed Manics",
-        Description = "A mix of addition, subtraction, multiplication, and division!"
+        Description = "A mix of all operations!"
     },
     FRACTION = {
         Id = "FRACTION",

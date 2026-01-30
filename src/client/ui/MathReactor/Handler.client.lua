@@ -44,7 +44,7 @@ for i, button in ipairs(choices) do
         choiceData[button] = {
             title = theme.DisplayName,
             desc = theme.Description,
-            price = 50 * i, -- Example: price increases per theme, adjust as needed
+            price = 600, -- Example: price increases per theme, adjust as needed
             id = theme.Id,
         }
     end
@@ -85,7 +85,9 @@ purchaseButton.BackgroundColor3 = Color3.fromRGB(150,150,150) -- greyed out
 local selectedChoice = nil -- track currently selected
 
 -- modal open/close
-ModalEvent.OnClientEvent:Connect(function(action)
+ModalEvent.OnClientEvent:Connect(function(action, modalType)
+	-- Only handle if this is the MathReactor modal
+	if modalType ~= nil and modalType ~= "mathreactor" then return end
 	if action == "open" then
 		gui.Enabled = true
 		frame.Visible = true

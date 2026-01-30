@@ -20,7 +20,10 @@ local RemoveMathGuiEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChil
 local ThemeChangedEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ThemeChangedEvent")
 local MathQuestionEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("MathQuestionEvent")
 local AnswerEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("AnswerEvent")
+
 local PlatformHandler = require(ServerScriptService.PlatformHandler)
+local NotificationHandler = require(ServerScriptService.NotificationHandler)
+
 
 local RunService = game:GetService("RunService")
 local lava = arena:WaitForChild("Lava") -- your lava part
@@ -264,28 +267,41 @@ task.spawn(function()
 		-- INTERMISSION
 		lava.Position = originalLavaPos
 		RoundState.Value = "Intermission"
-		for i = GameConstants.INTERMISSION_TIME, 0, -1 do
-			RoundTimer.Value = i
-			task.wait(1)
-		end
 
 		-- PROCESS THEME REQUEST QUEUE
 		local nextTheme = ThemeRequestQueue:GetNextTheme()
 		local themeData
-
+		
 		if nextTheme then
 			-- Handle the next theme (e.g., apply it to the round)
-			print("Next theme chosen by ", nextTheme.Player.Name, "is", nextTheme.Theme)
-
-			
 			themeData = ThemeConstants.Themes[nextTheme.Theme]
 		else
-            -- Pick a random theme if queue is empty
-            local allThemes = ThemeConstants.AllThemes
-            local randomTheme = allThemes[math.random(1, #allThemes)]
-            themeData = randomTheme
-            print("No theme in queue, picked random theme:", themeData.DisplayName)
-        end
+			-- Pick a random theme if queue is empty
+			local allThemes = ThemeConstants.AllThemes
+			local randomTheme = allThemes[math.random(1, #allThemes)]
+			themeData = randomTheme
+		end
+
+
+		for i = GameConstants.INTERMISSION_TIME, 0, -1 do
+			RoundTimer.Value = i
+
+			-- Notify in the middle of intermission
+			  if i == math.floor(GameConstants.INTERMISSION_TIME / 2) then
+				local themeName = themeData and themeData.DisplayName or "Unknown"
+				local themeDesc = themeData and themeData.Description or ""
+				print("Notifying players of upcoming round...", themeName)
+				NotificationHandler.NotifyAll(
+					("Theme: %s"):format(themeName),
+					themeDesc,
+					8
+				)
+			end
+
+			task.wait(1)
+		end
+
+
 
 
 		if themeData then
