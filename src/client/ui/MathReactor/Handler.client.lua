@@ -64,11 +64,9 @@ end
 local function highlightChoice(selected)
 	for _, button in ipairs(choices) do
 		if button == selected then
-			button.BackgroundColor3 = Color3.fromRGB(85, 170, 255) -- highlighted
-			button.BorderSizePixel = 2
+			button.BorderSizePixel = 4
 		else
-			button.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- default
-			button.BorderSizePixel = 1
+			button.BorderSizePixel = 3
 		end
 	end
 end

@@ -311,9 +311,6 @@ task.spawn(function()
 
 		-- Store answers for each player
 
-
-
-
 		-- START ROUND
 		assignPlatforms()
 

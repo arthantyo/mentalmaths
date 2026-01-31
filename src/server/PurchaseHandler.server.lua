@@ -2,31 +2,31 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local ServerScriptService = game:GetService("ServerScriptService")
 
+local ProductConstants = require(ServerScriptService.Constants.ProductConstants)
+local vendingMachineProducts = ProductConstants.VendingMachineProducts
+local mathReactorProducts = ProductConstants.MathReactorProducts
+
 local ThemeRequestQueue = require(ServerScriptService.Constants.ThemeRequestQueue)
 local NotificationHandler = require(ServerScriptService.NotificationHandler)
 local Players = game:GetService("Players")
 -- RemoteEvents in ReplicatedStorage
 local MathReactorPurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("MathReactorPurchaseEvent")
---local VendingMachinePurchaseEvent = ReplicatedStorage:WaitForChild("VendingMachinePurchaseEvent")
+local VendingMachinePurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("VendingMachinePurchaseEvent")
+local UpdateBillboardEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("UpdateBillboardEvent")
 
 -- map choices to Developer Product IDs
-local mathReactorProducts = {
-    SUBTRACTION_AND_ADDITION = 3523889485,
-    MULTIPLICATION_AND_DIVISION = 3523889752,
-    MIXED = 3523890377,
-    FRACTION = 3523890517,
-}
 
---local vendingMachineProducts = {
---	ChoiceA = 56789012, -- replace with your VendingMachine Dev Product IDs
---	ChoiceB = 67890123,
---	ChoiceC = 78901234,
---}
 
 local productIdToThemeId = {}
 for theme, id in pairs(mathReactorProducts) do
     productIdToThemeId[id] = theme
 end
+
+local productIdToVendingId = {}
+for vendingId, productId in pairs(vendingMachineProducts) do
+    productIdToVendingId[productId] = vendingId
+end
+
 
 
 
@@ -46,23 +46,49 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
     end
 
     local themeId = productIdToThemeId[receiptInfo.ProductId]
-	if themeId then
-		ThemeRequestQueue:AddQueue(player, themeId)
-		NotificationHandler.Notify(player, "Theme Purchased!", "Request added to the queue.", 4)
-		NotificationHandler.NotifyAll(
-			"Theme Purchase!",
-			player.Name .. " requested a queue!",
-			4,
-			Color3.fromRGB(110, 223, 118)
-		)
-    end
+    local vendingId = productIdToVendingId[receiptInfo.ProductId]
+
+    if themeId then
+        ThemeRequestQueue:AddQueue(player, themeId)
+        NotificationHandler.Notify(player, "Theme Purchased!", "Request added to the queue.", 4)
+        NotificationHandler.NotifyAll(
+            "Theme Purchase!",
+            player.Name .. " requested a queue!",
+            4,
+            Color3.fromRGB(110, 223, 118)
+        )
+    elseif vendingId then
+        -- Set the purchased vending item as an attribute (for persistence)
+        player:SetAttribute("VendingItem", vendingId)
+        -- Optionally, send the logo asset to the client
+        local logo = nil
+        for id, data in pairs(ProductConstants.VendingMachineData or {}) do
+            if id == vendingId then
+                logo = data.logo
+                break
+            end
+        end
+        print("Firing UpdateBillboardEvent for", player.Name, "with vendingId:", vendingId, "and logo:", logo)
+        UpdateBillboardEvent:FireClient(player, vendingId, logo)
+        NotificationHandler.Notify(
+            player,
+            "Purchase Successful!",
+            "You bought: " .. vendingId:gsub("_", " "):gsub("^%l", string.upper) .. " (for next round)",
+            4
+        )
+    end 
 
     return Enum.ProductPurchaseDecision.PurchaseGranted
 end
--- handle VendingMachine purchases
--- VendingMachinePurchaseEvent.OnServerEvent:Connect(function(player, choiceName)
--- 	local productId = vendingMachineProducts[choiceName]
--- 	if not productId then return end
 
--- 	MarketplaceService:PromptProductPurchase(player, productId)
--- end)
+-- handle VendingMachine purchases
+VendingMachinePurchaseEvent.OnServerEvent:Connect(function(player, choiceId)
+    local productId = vendingMachineProducts[choiceId]
+    if not productId then return end
+
+    MarketplaceService:PromptProductPurchase(player, vendingMachineProducts[choiceId])
+
+
+
+    return Enum.ProductPurchaseDecision.PurchaseGranted
+end)

@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 
 -- local VendingMachinePurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("VendingMachinePurchaseEvent")
 local ModalEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ModalEvent")
+local VendingMachinePurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("VendingMachinePurchaseEvent")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -13,6 +14,7 @@ local close = frame:WaitForChild("CloseButton")
 local detailFolder = frame:WaitForChild("Detail")
 local titleLabel = detailFolder:WaitForChild("ChoiceTitle")
 local descLabel = detailFolder:WaitForChild("ChoiceDesc")
+local logoImage = detailFolder:WaitForChild("ChoiceLogo")
 local purchaseButton = detailFolder:WaitForChild("PurchaseButton")
 
 local scrollingFrame = frame:WaitForChild("ScrollingFrame")
@@ -20,29 +22,34 @@ local itemFrames = scrollingFrame:GetChildren()
 
 -- Example: item data, replace with your own logic
 local itemData = {
-	{
-		id = "SODA",
-		title = "Raising Can",
-		desc = "Boost platform height for a round",
-		price = 300,
-	},
-	{
-		id = "REVIVE",
-		title = "Revive Amulet",
-		desc = "Revive after being eliminated",
-		price = 300,
-	},
-	{
-		id = "HEALTH",
-		title = "Health Elixir",
-		desc = "Increase health for a round",
-		price = 300,
-	},
+    {
+        id = "SODA",
+        marketId = 3526480793,
+        logo = "rbxassetid://125269940536094",
+        title = "Raising Can",
+        desc = "Boost platform height for a round",
+        price = 700,
+    },
+    {
+        id = "REVIVE",
+        marketId = 3526480794,
+        logo = "rbxassetid://94650696369473",
+        title = "Revive Amulet",
+        desc = "Revive after being eliminated",
+        price = 600,
+    },
+    {
+        id = "HEALTH",
+        marketId = 3526480795,
+        logo = "rbxassetid://76565413530927",
+        title = "Health Elixir",
+        desc = "Increase health for a round",
+        price = 700,
+    },
 }
-
 local frameToData = {}
 for i, itemFrame in ipairs(itemFrames) do
-    if itemFrame:IsA("Frame") then
+    if itemFrame:IsA("ImageLabel") then
         if itemData[i] then
             frameToData[itemFrame] = itemData[i]
             -- Optionally, update the frame's UI with the data
@@ -52,6 +59,11 @@ for i, itemFrame in ipairs(itemFrames) do
             if itemFrame:FindFirstChild("Desc") then
                 itemFrame.Desc.Text = itemData[i].desc
             end
+
+            if itemFrame:FindFirstChild("Logo") then
+                itemFrame.Logo.Image = itemData[i].logo
+            end
+            
             itemFrame:SetAttribute("Price", itemData[i].price)
             itemFrame.Visible = true
         else
@@ -70,7 +82,7 @@ end
 
 local function highlightChoice(selected)
     for _, itemFrame in ipairs(itemFrames) do
-        if itemFrame:IsA("Frame") then
+        if itemFrame:IsA("ImageLabel") then
             if itemFrame == selected then
                 itemFrame.BackgroundColor3 = Color3.fromRGB(85, 170, 255)
                 itemFrame.BorderSizePixel = 4
@@ -120,6 +132,7 @@ local function onChoiceClicked(choiceFrame)
     titleLabel.Text = data.title
     descLabel.Text = data.desc
     purchaseButton.Text = "Purchase ("..data.price.." Coins)"
+    logoImage.Image = data.logo
 
     setDetailVisible(true)
     highlightChoice(choiceFrame)
@@ -130,7 +143,7 @@ local function onChoiceClicked(choiceFrame)
 end
 
 for _, itemFrame in ipairs(itemFrames) do
-    if itemFrame:IsA("Frame") then
+    if itemFrame:IsA("ImageLabel") then
         itemFrame.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 onChoiceClicked(itemFrame)
@@ -138,7 +151,6 @@ for _, itemFrame in ipairs(itemFrames) do
         end)
     end
 end
-
 -- closing modal
 close.MouseButton1Click:Connect(function()
     frame.Visible = false
@@ -154,7 +166,8 @@ end)
 -- purchase button clicked
 purchaseButton.MouseButton1Click:Connect(function()
     if not selectedChoice then return end
+    local data = frameToData[selectedChoice]
+    if not data then return end
 
-    print("Purchasing item:", itemData[selectedChoice].id)
-    -- VendingMachinePurchaseEvent:FireServer(itemData[selectedChoice].id)
+    VendingMachinePurchaseEvent:FireServer(data.id)
 end)
