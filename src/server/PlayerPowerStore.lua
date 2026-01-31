@@ -14,6 +14,13 @@ function PlayerPowerStore:GetPowers(player)
     return PlayerPowerStore[player.UserId] or {}
 end
 
+
+function PlayerPowerStore:RemovePower(player, powerId)
+    if PlayerPowerStore[player.UserId] then
+        PlayerPowerStore[player.UserId][powerId] = nil
+    end
+end
+
 function PlayerPowerStore:ClearPowers(player)
     PlayerPowerStore[player.UserId] = {}
 end

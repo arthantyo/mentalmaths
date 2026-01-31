@@ -29,7 +29,7 @@ function PlatformHandler.UpdatePlatform(player, isCorrect)
     -- SODA: Double platform growth if owned
     local platformGrowth = GameConstants.PLATFORM_GROWTH
     if powers["SODA"] then
-        platformGrowth = platformGrowth * 5
+        platformGrowth = platformGrowth * GameConstants.PLATFORM_GROWTH_POWERUP_MULTIPLIER
     end
 
     local newSize

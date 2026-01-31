@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local ServerScriptService = game:GetService("ServerScriptService")
 
+
 local ProductConstants = require(ServerScriptService.Constants.ProductConstants)
 local vendingMachineProducts = ProductConstants.VendingMachineProducts
 local mathReactorProducts = ProductConstants.MathReactorProducts
@@ -13,6 +14,8 @@ local Players = game:GetService("Players")
 local MathReactorPurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("MathReactorPurchaseEvent")
 local VendingMachinePurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("VendingMachinePurchaseEvent")
 local UpdateBillboardEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("UpdateBillboardEvent")
+
+local ItemConstants = require(ReplicatedStorage:WaitForChild("Constants"):WaitForChild("ItemConstants"))
 
 -- store
 local PlayerPowerStore = require(ServerScriptService.PlayerPowerStore)
@@ -65,13 +68,13 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
         PlayerPowerStore:AddPower(player, vendingId)
 
         local logo = nil
-        for id, data in pairs(ProductConstants.VendingMachineData or {}) do
-            if id == vendingId then
+        for _, data in pairs(ItemConstants or {}) do
+            if data.id == vendingId then
                 logo = data.logo
                 break
             end
         end
-        
+
         print("Firing UpdateBillboardEvent for", player.Name, "with vendingId:", vendingId, "and logo:", logo)
         UpdateBillboardEvent:FireClient(player, vendingId, logo)
         NotificationHandler.Notify(

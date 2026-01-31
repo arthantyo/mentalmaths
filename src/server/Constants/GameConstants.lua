@@ -21,4 +21,7 @@ GameConstants.LAVA_DAMAGE = 5
 GameConstants.LAVA_CHECK_RATE = 0.1
 
 
+-- Powerup 
+GameConstants.PLATFORM_GROWTH_POWERUP_MULTIPLIER = 1.2
+
 return GameConstants

@@ -399,28 +399,66 @@ RunService.Heartbeat:Connect(function(dt)
 end)
 
 
+local revivedPlayers = {}
 
 Players.PlayerAdded:Connect(function(player)
-	player:SetAttribute("InRound", false)
+    player:SetAttribute("InRound", false)
+    revivedPlayers[player.UserId] = false
 
-	player.CharacterAdded:Connect(function(character)
+    player.CharacterAdded:Connect(function(character)
+        local humanoid = character:WaitForChild("Humanoid")
+        humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 
-		local humanoid = character:WaitForChild("Humanoid")
-		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+        humanoid.Died:Connect(function()
+            RemoveMathGuiEvent:FireClient(player)
+            restoreMovement(player)
+            player:SetAttribute("InRound", false)
 
+            -- REVIVE logic
+            local powers = PlayerPowerStore:GetPowers(player)
+            if powers["REVIVE"] and not revivedPlayers[player.UserId] then
+                revivedPlayers[player.UserId] = true -- prevent multiple revives
+                PlayerPowerStore:RemovePower(player, "REVIVE") -- remove the power after use
 
-		humanoid.Died:Connect(function()
-			RemoveMathGuiEvent:FireClient(player)
+                -- Respawn the player
+                player:LoadCharacter()
+                task.wait(0.2) -- wait for character to load
 
-			restoreMovement(player)
-			player:SetAttribute("InRound", false)
-		end)
+				-- Teleport to platform and increase its height slightly above lava
+				local platformName = player:GetAttribute("PlatformName")
+				local platform = mathPlatformsFolder:FindFirstChild(platformName)
+				if platform and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+					-- Increase only the Y (height) of the platform
+					local extraHeight = 2
+					local oldSize = platform.Size
+					local newSize = Vector3.new(oldSize.X, oldSize.Y + extraHeight, oldSize.Z)
+					local bottomY = platform.Position.Y - (oldSize.Y / 2)
+					local newPos = Vector3.new(
+						platform.Position.X,
+						lava.Position.Y + (newSize.Y / 2) + 1, -- 1 stud above lava
+						platform.Position.Z
+					)
+					platform.Size = newSize
+					platform.Position = newPos
 
-	end)
+					local hrp = player.Character.HumanoidRootPart
+					hrp.CFrame = CFrame.new(
+						platform.Position.X,
+						platform.Position.Y + newSize.Y/2 + hrp.Size.Y/2,
+						platform.Position.Z
+					)
+					local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+					if humanoid then
+						humanoid.Health = humanoid.MaxHealth
+					end
+				end
+                player:SetAttribute("InRound", true)
+            else
+                revivedPlayers[player.UserId] = false
+            end
+        end)
+    end)
 end)
-
-
-
 
 
 AnswerEvent.OnServerEvent:Connect(function(player: Player, userAnswer)

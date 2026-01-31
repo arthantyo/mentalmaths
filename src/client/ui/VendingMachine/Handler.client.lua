@@ -20,33 +20,9 @@ local purchaseButton = detailFolder:WaitForChild("PurchaseButton")
 local scrollingFrame = frame:WaitForChild("ScrollingFrame")
 local itemFrames = scrollingFrame:GetChildren()
 
--- Example: item data, replace with your own logic
-local itemData = {
-    {
-        id = "SODA",
-        marketId = 3526480793,
-        logo = "rbxassetid://125269940536094",
-        title = "Raising Can",
-        desc = "Boost platform height for a round",
-        price = 700,
-    },
-    {
-        id = "REVIVE",
-        marketId = 3526480794,
-        logo = "rbxassetid://94650696369473",
-        title = "Revive Amulet",
-        desc = "Revive after being eliminated",
-        price = 600,
-    },
-    {
-        id = "HEALTH",
-        marketId = 3526480795,
-        logo = "rbxassetid://76565413530927",
-        title = "Health Elixir",
-        desc = "Increase health for a round",
-        price = 700,
-    },
-}
+-- Get item data from shared ProductConstants
+local ProductConstants = require(ReplicatedStorage:WaitForChild("Constants"):WaitForChild("ItemConstants"))
+local itemData = ProductConstants
 local frameToData = {}
 for i, itemFrame in ipairs(itemFrames) do
     if itemFrame:IsA("ImageLabel") then
