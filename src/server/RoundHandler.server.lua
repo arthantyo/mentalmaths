@@ -31,6 +31,7 @@ local originalLavaPos = lava.Position
 
 local currentThemeId = "SUBTRACTION_AND_ADDITION" -- default fallback
 
+local PlayerPowerStore = require(ServerScriptService.PlayerPowerStore)
 
 -- TODO:
 -- there should be diff round themes!
@@ -150,6 +151,7 @@ end
 
 
 -- Assign platforms
+local PlayerPowerStore = require(ServerScriptService.PlayerPowerStore)
 local function assignPlatforms()
 	activePlayers = {}
 
@@ -161,24 +163,30 @@ local function assignPlatforms()
 
 		print("assigned", platformName,player)
 
+		-- Apply HEALTH power: double max health at round start
+		local powers = PlayerPowerStore:GetPowers(player)
+		if powers["HEALTH"] and player.Character then
+			local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.MaxHealth = 200
+				humanoid.Health = 200
+			end
+		end
+
 		-- TELEPORT PLAYER ONTO PLATFORM
 		local platform = mathPlatformsFolder:FindFirstChild(platformName)
 		if platform and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 			local hrp = player.Character.HumanoidRootPart
-
-
 
 			local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
 
 			local LOCKED_WALKSPEED = 0
 			local LOCKED_JUMPPOWER = 0
 
-			-- inside assignPlatforms
 			if humanoid then
 				humanoid.WalkSpeed = LOCKED_WALKSPEED
 				humanoid.JumpPower = LOCKED_JUMPPOWER
 			end
-
 
 			hrp.Anchored = true
 			hrp.CFrame = CFrame.new(
@@ -213,6 +221,8 @@ local function clearPlayers()
 	for _, player in ipairs(Players:GetPlayers()) do
 		player:SetAttribute("PlatformName", nil)
 		player:SetAttribute("InRound", false)
+
+		PlayerPowerStore:ClearPowers(player)
 
 		if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 			local hrp = player.Character.HumanoidRootPart
@@ -431,7 +441,6 @@ AnswerEvent.OnServerEvent:Connect(function(player: Player, userAnswer)
         end
     end
 
-    print(player.Name, "answered:", userAnswer, "Correct:", isCorrect)
     PlatformHandler.UpdatePlatform(player, isCorrect)
 
     if player:GetAttribute("InRound") then

@@ -8,6 +8,7 @@ for _, part in ipairs(platformsFolder:GetChildren()) do
     original[part.Name] = { Size = part.Size, Position = part.Position }
 end
 
+local PlayerPowerStore = require(game:GetService("ServerScriptService").PlayerPowerStore)
 local PlatformHandler = {}
 
 function PlatformHandler.UpdatePlatform(player, isCorrect)
@@ -22,14 +23,23 @@ function PlatformHandler.UpdatePlatform(player, isCorrect)
     local oldSize = part.Size
     local bottomY = part.Position.Y - (oldSize.Y / 2)
 
+    -- Get player powers from PlayerPowerStore
+    local powers = PlayerPowerStore:GetPowers(player)
+
+    -- SODA: Double platform growth if owned
+    local platformGrowth = GameConstants.PLATFORM_GROWTH
+    if powers["SODA"] then
+        platformGrowth = platformGrowth * 5
+    end
+
     local newSize
     if isCorrect then
-        newSize = oldSize + Vector3.new(GameConstants.PLATFORM_GROWTH, GameConstants.PLATFORM_GROWTH, 0)
+        newSize = oldSize + Vector3.new(platformGrowth, platformGrowth, 0)
     else
         local min = original[part.Name].Size
         newSize = Vector3.new(
-            math.max(oldSize.X - GameConstants.PLATFORM_GROWTH, min.X),
-            math.max(oldSize.Y - GameConstants.PLATFORM_GROWTH, min.Y),
+            math.max(oldSize.X - platformGrowth, min.X),
+            math.max(oldSize.Y - platformGrowth, min.Y),
             oldSize.Z
         )
 

@@ -22,7 +22,6 @@ local function addVendingIcon(logo)
     if oldIcon then oldIcon:Destroy() end
 
 
-    print("Adding vending icon with logo:", logo)
     -- Add new icon
     if logo then
         local icon = Instance.new("ImageLabel")
@@ -30,7 +29,7 @@ local function addVendingIcon(logo)
         icon.Image = logo
         icon.Size = UDim2.new(0, 64, 0, 64)
         icon.AnchorPoint = Vector2.new(0.5, 0)
-        icon.Position = UDim2.new(0.5, 0, -0.5, 0)
+        icon.Position = UDim2.new(0.5, 0, -0.8, 0)
         icon.BackgroundTransparency = 1
         icon.Parent = billboard
     end

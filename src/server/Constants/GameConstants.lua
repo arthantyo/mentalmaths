@@ -2,7 +2,7 @@ local GameConstants = {}
 
 -- Round Timings (in seconds)
 GameConstants.ROUND_TIME = 15
-GameConstants.INTERMISSION_TIME = 1000
+GameConstants.INTERMISSION_TIME = 20
 
 -- Player defaults
 GameConstants.PLAYER_DEFAULT_WALKSPEED = 60

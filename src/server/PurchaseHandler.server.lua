@@ -14,6 +14,10 @@ local MathReactorPurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitF
 local VendingMachinePurchaseEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("VendingMachinePurchaseEvent")
 local UpdateBillboardEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("UpdateBillboardEvent")
 
+-- store
+local PlayerPowerStore = require(ServerScriptService.PlayerPowerStore)
+
+
 -- map choices to Developer Product IDs
 
 
@@ -58,9 +62,8 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
             Color3.fromRGB(110, 223, 118)
         )
     elseif vendingId then
-        -- Set the purchased vending item as an attribute (for persistence)
-        player:SetAttribute("VendingItem", vendingId)
-        -- Optionally, send the logo asset to the client
+        PlayerPowerStore:AddPower(player, vendingId)
+
         local logo = nil
         for id, data in pairs(ProductConstants.VendingMachineData or {}) do
             if id == vendingId then
@@ -68,6 +71,7 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
                 break
             end
         end
+        
         print("Firing UpdateBillboardEvent for", player.Name, "with vendingId:", vendingId, "and logo:", logo)
         UpdateBillboardEvent:FireClient(player, vendingId, logo)
         NotificationHandler.Notify(
