@@ -31,7 +31,8 @@ local originalLavaPos = lava.Position
 
 local currentThemeId = "SUBTRACTION_AND_ADDITION" -- default fallback
 
-local PlayerPowerStore = require(ServerScriptService.PlayerPowerStore)
+local DataStoreService = game:GetService("DataStoreService")
+local statsStore = DataStoreService:GetDataStore("PlayerStats")
 
 -- TODO:
 -- there should be diff round themes!
@@ -143,9 +144,14 @@ local function generateQuestion(themeId)
 		local simpNum = num // divisor
 		local simpDen = denom // divisor
 
-		local answer = simpNum .. "/" .. simpDen
-		return question, answer
-
+		local answer
+		if simpDen == 1 then
+			answer = tostring(simpNum) -- Accept as whole number
+		else
+			answer = simpNum .. "/" .. simpDen
+		end
+		-- Also return the fraction string for validation
+		return question, {fraction = simpNum .. "/" .. simpDen, whole = tostring(simpNum), isWhole = simpDen == 1}
 	end
 end
 
@@ -160,8 +166,6 @@ local function assignPlatforms()
 		player:SetAttribute("PlatformName", platformName)
 		player:SetAttribute("InRound", true)
 		table.insert(activePlayers, player)
-
-		print("assigned", platformName,player)
 
 		-- Apply HEALTH power: double max health at round start
 		local powers = PlayerPowerStore:GetPowers(player)
@@ -269,6 +273,7 @@ local function resetAvailablePlatforms()
 		table.insert(availablePlatforms, part.Name)
 	end
 end
+
 
 
 -- MAIN LOOP
@@ -405,6 +410,7 @@ Players.PlayerAdded:Connect(function(player)
     player:SetAttribute("InRound", false)
     revivedPlayers[player.UserId] = false
 
+
     player.CharacterAdded:Connect(function(character)
         local humanoid = character:WaitForChild("Humanoid")
         humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
@@ -462,26 +468,77 @@ end)
 
 
 AnswerEvent.OnServerEvent:Connect(function(player: Player, userAnswer)
-    local correctAnswer = playerAnswers[player.UserId]
-    if correctAnswer == nil then return end
+	local correctAnswer = playerAnswers[player.UserId]
+	if correctAnswer == nil then return end
 
-    -- Validate input
-    local isCorrect = false
-    if type(correctAnswer) == "number" then
-        local num = tonumber(userAnswer)
-        if num then
-            isCorrect = math.abs(num - correctAnswer) < 0.01
-        end
-    else
-        -- For fractions, check format "a/b"
-        if type(userAnswer) == "string" and userAnswer:match("^%s*%d+%s*/%s*%d+%s*$") then
-            isCorrect = userAnswer:gsub("%s+", "") == tostring(correctAnswer):gsub("%s+", "")
-        end
-    end
+	-- Validate input
+	local isCorrect = false
+	if type(correctAnswer) == "number" then
+		local num = tonumber(userAnswer)
+		if num then
+			isCorrect = math.abs(num - correctAnswer) < 0.01
+		end
+	elseif type(correctAnswer) == "table" and correctAnswer.fraction and correctAnswer.whole then
+		-- Fraction question: accept either the simplified fraction or whole number if denominator is 1
+		local input = tostring(userAnswer):gsub("%s+", "")
+		if input == correctAnswer.fraction:gsub("%s+", "") then
+			isCorrect = true
+		elseif correctAnswer.isWhole and input == correctAnswer.whole then
+			isCorrect = true
+		elseif correctAnswer.isWhole then
+			-- Accept numeric input for whole number
+			local num = tonumber(input)
+			if num and tostring(num) == correctAnswer.whole then
+				isCorrect = true
+			end
+		end
+	end
 
-    PlatformHandler.UpdatePlatform(player, isCorrect)
+	if isCorrect then
+		local leaderstats = player:FindFirstChild("leaderstats")
+		if leaderstats then
+			local iqStat = leaderstats:FindFirstChild("IQ")
+			local level = leaderstats:FindFirstChild("Level")
+			if iqStat and level then
+				iqStat.Value = iqStat.Value + 1
+				-- Nonlinear level up: e.g., level = floor(math.sqrt(iqStat/3)) + 1
+				local prevLevel = level.Value
+				local newLevel = 1 + math.floor(math.sqrt(iqStat.Value / 3))
+				level.Value = newLevel
+				if newLevel > prevLevel then
+					-- Fun: Notify and play a sound on level up
+					NotificationHandler.Notify(player, "Level Up!", "You reached Level " .. tostring(newLevel) .. "!", 4)
+					-- Play a sound effect (if you have one in ReplicatedStorage)
+					local soundId = "rbxassetid://2686079706" -- Replace with your own fun sound asset id
+					local sound = Instance.new("Sound")
+					sound.SoundId = soundId
+					sound.Volume = 1
+					sound.Parent = workspace
+					sound:Play()
+					game:GetService("Debris"):AddItem(sound, 5)
+				end
+			end
+		end
 
-    if player:GetAttribute("InRound") then
+		local correctSound = Instance.new("Sound")
+		correctSound.SoundId = "rbxassetid://112043091190593"
+		correctSound.Volume = 1
+		correctSound.Parent = workspace
+		correctSound:Play()
+		game:GetService("Debris"):AddItem(correctSound, 3)
+	else
+		-- Play sound for incorrect answer
+		local wrongSound = Instance.new("Sound")
+		wrongSound.SoundId = "rbxassetid://85370639129538"
+		wrongSound.Volume = 1
+		wrongSound.Parent = workspace
+		wrongSound:Play()
+		game:GetService("Debris"):AddItem(wrongSound, 3)
+	end
+
+	PlatformHandler.UpdatePlatform(player, isCorrect)
+
+	if player:GetAttribute("InRound") then
 		local question, answer = generateQuestion(currentThemeId)
 		playerAnswers[player.UserId] = answer
 		MathQuestionEvent:FireClient(player, question)

@@ -64,6 +64,13 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
             4,
             Color3.fromRGB(110, 223, 118)
         )
+
+        local kachingSound = Instance.new("Sound")
+        kachingSound.SoundId = "rbxassetid://71356871159392"
+        kachingSound.Volume = 1
+        kachingSound.Parent = workspace
+        kachingSound:Play()
+        game:GetService("Debris"):AddItem(kachingSound, 3)
     elseif vendingId then
         PlayerPowerStore:AddPower(player, vendingId)
 
@@ -75,7 +82,6 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
             end
         end
 
-        print("Firing UpdateBillboardEvent for", player.Name, "with vendingId:", vendingId, "and logo:", logo)
         UpdateBillboardEvent:FireClient(player, vendingId, logo)
         NotificationHandler.Notify(
             player,
@@ -83,6 +89,13 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
             "You bought: " .. vendingId:gsub("_", " "):gsub("^%l", string.upper) .. " (for next round)",
             4
         )
+
+        local kachingSound = Instance.new("Sound")
+        kachingSound.SoundId = "rbxassetid://71356871159392"
+        kachingSound.Volume = 1
+        kachingSound.Parent = workspace
+        kachingSound:Play()
+        game:GetService("Debris"):AddItem(kachingSound, 3)
     end 
 
     return Enum.ProductPurchaseDecision.PurchaseGranted

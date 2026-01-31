@@ -1,7 +1,7 @@
 local GameConstants = {}
 
 -- Round Timings (in seconds)
-GameConstants.ROUND_TIME = 15
+GameConstants.ROUND_TIME = 60
 GameConstants.INTERMISSION_TIME = 20
 
 -- Player defaults
