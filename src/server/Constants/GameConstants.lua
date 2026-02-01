@@ -19,7 +19,7 @@ GameConstants.PLATFORM_DAMAGE = 20
 GameConstants.LAVA_SPEED = 0.5 -- studs per second
 GameConstants.LAVA_DAMAGE = 5
 GameConstants.LAVA_CHECK_RATE = 0.1
-
+GameConstants.LAVA_SCALE_INTERVAL = 0.5
 
 -- Powerup 
 GameConstants.PLATFORM_GROWTH_POWERUP_MULTIPLIER = 1.2

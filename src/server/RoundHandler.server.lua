@@ -309,7 +309,6 @@ task.spawn(function()
 			  if i == math.floor(GameConstants.INTERMISSION_TIME / 2) then
 				local themeName = themeData and themeData.DisplayName or "Unknown"
 				local themeDesc = themeData and themeData.Description or ""
-				print("Notifying players of upcoming round...", themeName)
 				NotificationHandler.NotifyAll(
 					("Theme: %s"):format(themeName),
 					themeDesc,
@@ -451,14 +450,35 @@ task.spawn(function()
 end)
 
 
+local lastLavaScaleTime = 0
 
 RunService.Heartbeat:Connect(function(dt)
-	if RoundState.Value == "InRound" then
-		-- Move the lava up smoothly
-		lava.Position = lava.Position + Vector3.new(0, GameConstants.LAVA_SPEED * dt, 0)
-	end
-end)
+    if RoundState.Value == "InRound" then
+        -- Calculate elapsed time in round
+        local elapsedTime = GameConstants.ROUND_TIME - RoundTimer.Value
+        local progress = elapsedTime / GameConstants.ROUND_TIME -- 0 to 1
+        
+        -- Accelerate lava speed based on progress (square root - very gentle acceleration)
+        local speedMultiplier = 1 + (progress ^ 0.5) * 0.01 -- starts at 1x, ends at 1.01x
+        local currentSpeed = GameConstants.LAVA_SPEED * speedMultiplier
+        
+        lava.Position = lava.Position + Vector3.new(0, currentSpeed * dt, 0)
 
+        -- Scale lava smoothly with tweening
+        lastLavaScaleTime = lastLavaScaleTime + dt
+        if lastLavaScaleTime >= GameConstants.LAVA_SCALE_INTERVAL then
+            lastLavaScaleTime = 0
+            local scaleMultiplier = 1 + (progress ^ 1.2) * 0.1 -- starts at 1x, ends at 1.5x
+            local newSize = Vector3.new(lava.Size.X, lava.Size.Y * scaleMultiplier, lava.Size.Z)
+            
+            TweenService:Create(
+                lava,
+                TweenInfo.new(GameConstants.LAVA_SCALE_INTERVAL, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+                { Size = newSize }
+            ):Play()
+        end
+    end
+end)
 
 local revivedPlayers = {}
 
