@@ -20,6 +20,7 @@ local RemoveMathGuiEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChil
 local ThemeChangedEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ThemeChangedEvent")
 local MathQuestionEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("MathQuestionEvent")
 local AnswerEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("AnswerEvent")
+local PostRoundEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("PostRoundEvent")
 
 local PlatformHandler = require(ServerScriptService.PlatformHandler)
 local NotificationHandler = require(ServerScriptService.NotificationHandler)
@@ -85,6 +86,9 @@ local activePlayers = {}
 
 -- Store answers for each player
 local playerAnswers = {}
+
+-- Track IQ gained during current round
+local roundIQ = {}
 
 
 local function generateQuestion(themeId)
@@ -325,6 +329,7 @@ task.spawn(function()
 		end
 
 		-- Store answers for each player
+		roundIQ = {} -- Reset round IQ tracking
 
 		-- START ROUND
 		assignPlatforms()
@@ -345,6 +350,57 @@ task.spawn(function()
 
 		-- END ROUND
 		RoundState.Value = "RoundEnd"
+		
+		-- Calculate top 3 players by round IQ
+		local playersWithIQ = {}
+		for userId, iq in pairs(roundIQ) do
+			local player = Players:GetPlayerByUserId(userId)
+			if player then
+				table.insert(playersWithIQ, {
+					Player = player,
+					IQ = iq,
+					UserId = userId,
+					Name = player.Name
+				})
+			end
+		end
+		
+		-- Sort by IQ descending
+		table.sort(playersWithIQ, function(a, b)
+			return a.IQ > b.IQ
+		end)
+		
+		-- Award bonus IQ to top 3
+		local bonuses = {30, 20, 10}
+		local top3Data = {}
+		
+		for i = 1, math.min(3, #playersWithIQ) do
+			local playerData = playersWithIQ[i]
+			local bonus = bonuses[i]
+			
+			-- Award bonus IQ
+			local leaderstats = playerData.Player:FindFirstChild("leaderstats")
+			if leaderstats then
+				local iqStat = leaderstats:FindFirstChild("IQ")
+				if iqStat then
+					iqStat.Value = iqStat.Value + bonus
+				end
+			end
+			
+			-- Add to top 3 data for client
+			table.insert(top3Data, {
+				UserId = playerData.UserId,
+				Name = playerData.Name,
+				Place = i,
+				Bonus = bonus
+			})
+		end
+		
+		-- Fire RemoteEvent to all clients with top 3 data
+		if #top3Data > 0 then
+			PostRoundEvent:FireAllClients(top3Data)
+		end
+		
 		resetPlatforms()
 		clearPlayers()
 		resetAvailablePlatforms() 
@@ -495,6 +551,12 @@ AnswerEvent.OnServerEvent:Connect(function(player: Player, userAnswer)
 	end
 
 	if isCorrect then
+		-- Track round IQ
+		if not roundIQ[player.UserId] then
+			roundIQ[player.UserId] = 0
+		end
+		roundIQ[player.UserId] = roundIQ[player.UserId] + 1
+		
 		local leaderstats = player:FindFirstChild("leaderstats")
 		if leaderstats then
 			local iqStat = leaderstats:FindFirstChild("IQ")
