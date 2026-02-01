@@ -54,6 +54,33 @@ local function addVendingIcon(logo)
     end
 end
 
+local function clearVendingIcons()
+    local player = Players.LocalPlayer
+    local character = player.Character
+    if not character then return end
+    
+    local head = character:FindFirstChild("Head")
+    if not head then return end
+    
+    local billboard = head:FindFirstChild("NameAndLevel")
+    if not billboard then return end
+    
+    -- Remove all vending icons
+    for _, child in ipairs(billboard:GetChildren()) do
+        if child.Name == "VendingIcon" then
+            child:Destroy()
+        end
+    end
+end
+
+-- Listen for round state changes to clear icons at round end
+local RoundState = ReplicatedStorage:WaitForChild("RoundState")
+RoundState.Changed:Connect(function(newState)
+    if newState == "RoundEnd" or newState == "Intermission" then
+        clearVendingIcons()
+    end
+end)
+
 UpdateBillboardEvent.OnClientEvent:Connect(function(vendingId, logo)
     addVendingIcon(logo)
 end)

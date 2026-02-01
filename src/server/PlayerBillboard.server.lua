@@ -46,8 +46,6 @@ local function createLevelDisplay(player)
 	mainText.ZIndex = 2
 	mainText.Parent = levelFrame
 
-
-
 	-- NAME (BOTTOM)
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Size = UDim2.new(1, 0, 0.55, 0)
@@ -60,6 +58,25 @@ local function createLevelDisplay(player)
 	nameLabel.Font = Enum.Font.PatrickHand
 	nameLabel.TextScaled = true
 	nameLabel.Parent = billboard
+	
+	-- Update level display with actual level from leaderstats
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if leaderstats then
+		local levelStat = leaderstats:FindFirstChild("Level")
+		if levelStat then
+			-- Set initial level
+			local levelText = "Level " .. tostring(levelStat.Value)
+			glowText.Text = levelText
+			mainText.Text = levelText
+			
+			-- Listen for level changes and update display
+			levelStat.Changed:Connect(function(newLevel)
+				levelText = "Level " .. tostring(newLevel)
+				glowText.Text = levelText
+				mainText.Text = levelText
+			end)
+		end
+	end
 end
 
 Players.PlayerAdded:Connect(function(player)
