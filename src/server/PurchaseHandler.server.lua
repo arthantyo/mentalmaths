@@ -72,6 +72,17 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
         kachingSound:Play()
         game:GetService("Debris"):AddItem(kachingSound, 3)
     elseif vendingId then
+        -- Check if player already has this power
+        if PlayerPowerStore:HasPower(player, vendingId) then
+            NotificationHandler.Notify(
+                player,
+                "Already Owned!",
+                "You already have: " .. vendingId:gsub("_", " "):gsub("^%l", string.upper),
+                4
+            )
+            return Enum.ProductPurchaseDecision.PurchaseGranted
+        end
+        
         PlayerPowerStore:AddPower(player, vendingId)
 
         local logo = nil
@@ -96,7 +107,7 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
         kachingSound.Parent = workspace
         kachingSound:Play()
         game:GetService("Debris"):AddItem(kachingSound, 3)
-    end 
+    end
 
     return Enum.ProductPurchaseDecision.PurchaseGranted
 end
@@ -106,9 +117,16 @@ VendingMachinePurchaseEvent.OnServerEvent:Connect(function(player, choiceId)
     local productId = vendingMachineProducts[choiceId]
     if not productId then return end
 
+    -- Check if player already has this power
+    if PlayerPowerStore:HasPower(player, choiceId) then
+        NotificationHandler.Notify(
+            player,
+            "Already Owned!",
+            "You already have: " .. choiceId:gsub("_", " "):gsub("^%l", string.upper),
+            4
+        )
+        return
+    end
+
     MarketplaceService:PromptProductPurchase(player, vendingMachineProducts[choiceId])
-
-
-
-    return Enum.ProductPurchaseDecision.PurchaseGranted
 end)
