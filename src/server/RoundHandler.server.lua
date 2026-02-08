@@ -29,6 +29,7 @@ local NotificationHandler = require(ServerScriptService.NotificationHandler)
 local RunService = game:GetService("RunService")
 local lava = arena:WaitForChild("Lava") -- your lava part
 local originalLavaPos = lava.Position
+local originalLavaScale = lava.Size
 
 local currentThemeId = "SUBTRACTION_AND_ADDITION" -- default fallback
 
@@ -284,6 +285,7 @@ end
 task.spawn(function()
 	while true do
 		-- INTERMISSION
+		lava.Size = originalLavaScale
 		lava.Position = originalLavaPos
 		RoundState.Value = "Intermission"
 
